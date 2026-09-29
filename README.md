@@ -75,7 +75,7 @@ For 1000+ simultaneous emails, the worker queues rather than spawns unbounded pr
 
 ## Railway deployment
 
-Follow [docs/RAILWAY.md](docs/RAILWAY.md) in order: PostgreSQL / Redis / Elasticsearch, API and worker, OAuth configuration, then live verification. BullMQ is a Node library inside the worker service; it does not require an independent BullMQ database or managed instance. Both services build this repository's Dockerfile. Worker uses `railway.worker.toml`.
+Follow [docs/RAILWAY.md](docs/RAILWAY.md) in order: PostgreSQL / Redis / Elasticsearch, API and worker, OAuth configuration, then live verification. BullMQ is a Node library inside the worker service; it does not require an independent BullMQ database or managed instance. Both services build this repository's Dockerfile. Set service commands directly in Railway Settings; legacy TOML files are reference configurations.
 
 ## Validation and demo
 
