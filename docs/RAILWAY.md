@@ -8,7 +8,7 @@ Add Elasticsearch as a Docker-image service using `elastic/elasticsearch:8.17.0`
 
 ## 2. Add API and BullMQ worker
 
-Create two services from `vermavaibhav23/EmailSchedulerService`. Both use repository root and the Dockerfile. Set API config path to `/railway.toml`, worker config path to `/railway.worker.toml`. The API serves the React UI as well. No extra static hosting or BullMQ instance is required.
+Create two services from `vermavaibhav23/EmailSchedulerService`. Both use repository root and the Dockerfile. In Railway Settings, select Dockerfile as builder. Set API start command `npm start` and worker start command `npm run worker`; set pre-deploy command `npm run migrate` on both. Set `/health/live` as the API health check; the worker has no HTTP health check. The legacy TOML files are included as reference only: this Railway account currently disallows enabling legacy Config as Code for new services. The API serves the React UI as well. No extra static hosting or BullMQ instance is required.
 
 For both services set matching variables:
 
