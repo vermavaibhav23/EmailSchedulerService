@@ -9,6 +9,7 @@ export const env = z
     REDIS_URL: z.string().url(),
     ELASTICSEARCH_URL: z.string().url(),
     ELASTICSEARCH_API_KEY: z.string().optional(),
+    ELASTICSEARCH_PASSWORD: z.string().optional(),
     SESSION_SECRET: z.string().min(32),
     ENCRYPTION_KEY: z.string().regex(/^[0-9a-f]{64}$/i),
     GOOGLE_CLIENT_ID: z.string().default(""),

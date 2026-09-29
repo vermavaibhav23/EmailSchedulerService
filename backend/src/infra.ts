@@ -11,6 +11,8 @@ export const search = new Client({
   node: env.ELASTICSEARCH_URL,
   ...(env.ELASTICSEARCH_API_KEY
     ? { auth: { apiKey: env.ELASTICSEARCH_API_KEY } }
-    : {}),
+    : env.ELASTICSEARCH_PASSWORD
+      ? { auth: { username: "elastic", password: env.ELASTICSEARCH_PASSWORD } }
+      : {}),
 });
 export const index = "scheduler-emails";

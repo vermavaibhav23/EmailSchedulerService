@@ -23,7 +23,15 @@ import { encrypt } from "./crypto.js";
 import { scheduleSchema, plannedTimes } from "./validation.js";
 const app = express();
 app.set("trust proxy", 1);
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
+      },
+    },
+  }),
+);
 app.use(express.json({ limit: "2mb" }));
 app.use(
   session({
@@ -140,7 +148,13 @@ api.post("/senders/ethereal", async (req, res, next) => {
   }
 });
 api.post("/campaigns", async (req, res, next) => {
-  const client = await db.connect();
+  let client;
+  try {
+    client = await db.connect();
+  } catch (error) {
+    next(error);
+    return;
+  }
   try {
     const data = scheduleSchema.parse(req.body);
     const key = z.string().min(8).max(200).parse(req.get("idempotency-key"));
@@ -160,11 +174,9 @@ api.post("/campaigns", async (req, res, next) => {
     if (existing) {
       await client.query("COMMIT");
       if (existing.request_hash !== hash) {
-        res
-          .status(409)
-          .json({
-            error: "Idempotency key was already used for different content",
-          });
+        res.status(409).json({
+          error: "Idempotency key was already used for different content",
+        });
         return;
       }
       res.json({ campaignId: existing.id, replayed: true });
@@ -231,14 +243,12 @@ api.post("/campaigns", async (req, res, next) => {
       ],
     );
     await client.query("COMMIT");
-    res
-      .status(201)
-      .json({
-        campaignId: id,
-        count: recipients.length,
-        delayMs: delay,
-        hourlyLimit: cap,
-      });
+    res.status(201).json({
+      campaignId: id,
+      count: recipients.length,
+      delayMs: delay,
+      hourlyLimit: cap,
+    });
   } catch (e) {
     await client.query("ROLLBACK");
     next(e);
@@ -290,12 +300,10 @@ api.get("/emails", async (req, res, next) => {
         });
         ids = found.hits.hits.map((h) => h._id!);
       } catch {
-        res
-          .status(503)
-          .json({
-            error:
-              "Search is temporarily unavailable. Clear the search to browse emails.",
-          });
+        res.status(503).json({
+          error:
+            "Search is temporarily unavailable. Clear the search to browse emails.",
+        });
         return;
       }
     }
@@ -395,6 +403,11 @@ app.use(
       next(e);
     }
   },
+  helmet({
+    contentSecurityPolicy: {
+      directives: { scriptSrc: ["'self'", "'unsafe-inline'"] },
+    },
+  }),
   board.getRouter(),
 );
 app.use(
@@ -419,13 +432,11 @@ app.use(
     _next: express.NextFunction,
   ) => {
     if (error instanceof z.ZodError) {
-      res
-        .status(400)
-        .json({
-          error: error.issues
-            .map((i) => `${i.path.join(".")}: ${i.message}`)
-            .join("; "),
-        });
+      res.status(400).json({
+        error: error.issues
+          .map((i) => `${i.path.join(".")}: ${i.message}`)
+          .join("; "),
+      });
       return;
     }
     console.error(
