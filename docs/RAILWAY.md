@@ -9,7 +9,7 @@ Add Elasticsearch as a Docker-image service using `elastic/elasticsearch:8.17.0`
 Railway volumes are mounted as root. For this Elasticsearch image set `RAILWAY_RUN_UID=0` and the following custom start command; it fixes volume ownership then drops to the Elasticsearch service user before boot:
 
 ```sh
-/bin/bash -c 'chown -R 1000:0 /usr/share/elasticsearch/data && exec su -s /bin/bash elasticsearch -c "/usr/local/bin/docker-entrypoint.sh eswrapper"'
+/bin/bash -c 'chown -R 1000:0 /usr/share/elasticsearch/data && exec su -s /bin/bash elasticsearch -c "export PATH=/usr/share/elasticsearch/bin:/usr/local/bin:/usr/bin:/bin; exec /usr/local/bin/docker-entrypoint.sh eswrapper"'
 ```
 
 ## 2. Add API and BullMQ worker
@@ -48,3 +48,11 @@ Check each service's deployment status and logs. `/health/live` returns 200 as s
 ## Current handoff
 
 These are checked-in deployment configuration and instructions, not evidence that a Railway project exists. Live creation/deployment requires an authenticated Railway session and repository access. OAuth testing requires the user's real app credentials. No credentials belong in Git.
+
+## Current deployment
+
+Project: https://railway.com/project/6e662898-d5d2-402e-acf2-d44c7e927953
+
+App: https://api-production-d882.up.railway.app
+
+Verified on 2026-09-30 UTC: login page loads, `/health/live` returns 200, `/health/ready` returns 200 (PostgreSQL, Redis, Elasticsearch and worker heartbeat), and unauthenticated `/api/me` returns 401. All infrastructure and BullMQ workers run on Railway. Google and Slack OAuth credentials still need configuring; authenticated delivery, restart recovery, rate-limit and Slack tests in VERIFICATION.md have not yet been executed against this deployment.
