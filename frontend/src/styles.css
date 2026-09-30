@@ -68,24 +68,6 @@ aside {
   display: flex;
   flex-direction: column;
 }
-.brand,
-.login-brand {
-  font-weight: 700;
-  font-size: 30px;
-  letter-spacing: -2px;
-  line-height: 1;
-}
-.brand span,
-.login-brand span {
-  display: block;
-  letter-spacing: 2px;
-  font-size: 8px;
-  font-weight: 500;
-  margin-top: 7px;
-}
-.brand {
-  padding-left: 8px;
-}
 .profile {
   display: flex;
   align-items: center;
@@ -485,11 +467,6 @@ kbd {
   justify-content: center;
   position: relative;
 }
-.login-brand {
-  position: absolute;
-  top: 36px;
-  left: 40px;
-}
 .login-card {
   width: 345px;
   border: 1px solid #f0f2f0;
@@ -797,11 +774,6 @@ kbd {
     width: 65px;
     padding: 20px 7px;
   }
-  .brand {
-    font-size: 22px;
-    padding: 0;
-  }
-  .brand span,
   .profile,
   .nav-title,
   .sidebar-bottom,
@@ -899,14 +871,84 @@ kbd {
   }
 }
 
-.email-login { display: grid; gap: 16px; text-align: left; }
-.email-login label { display: grid; gap: 7px; font-size: 12px; color: #435348; font-weight: 500; }
-.email-login input { width: 100%; padding: 12px; border: 1px solid #e2e9e3; border-radius: 5px; font-size: 12px; background: #fff; }
-.email-login input:focus { outline: 2px solid #72a67d; outline-offset: 2px; }
-.email-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px; border: 0; border-radius: 5px; background: #508c5c; color: #fff; font-size: 12px; }
-.email-submit:disabled { opacity: .65; cursor: wait; }
-.login-card .account-switch { color: #78837b; margin: 22px 0 0; }
-.account-switch button { background: none; border: none; color: #426c4a; font-size: 11px; font-weight: 600; padding: 0 0 0 3px; }
-.password-hint { color: #78837b; font-size: 11px; margin-top: -9px; }
-.avatar-fallback { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #e9f4ec; color: #426c4a; font-size: 12px; flex-shrink: 0; }
-@media (max-width: 600px) { .login { padding: 100px 20px 70px; } .login-card { width: 100%; max-width: 345px; } .login-brand { top: 25px; left: 25px; } .login footer { bottom: 20px; } }
+.email-login {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+}
+.email-login label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  color: #435348;
+  font-weight: 500;
+}
+.email-login input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e9e3;
+  border-radius: 5px;
+  font-size: 12px;
+  background: #fff;
+}
+.email-login input:focus {
+  outline: 2px solid #72a67d;
+  outline-offset: 2px;
+}
+.email-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 5px;
+  background: #508c5c;
+  color: #fff;
+  font-size: 12px;
+}
+.email-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.login-card .account-switch {
+  color: #78837b;
+  margin: 22px 0 0;
+}
+.account-switch button {
+  background: none;
+  border: none;
+  color: #426c4a;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 0 0 3px;
+}
+.password-hint {
+  color: #78837b;
+  font-size: 11px;
+  margin-top: -9px;
+}
+.avatar-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e9f4ec;
+  color: #426c4a;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .login {
+    padding: 100px 20px 70px;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 345px;
+  }
+  .login footer {
+    bottom: 20px;
+  }
+}
