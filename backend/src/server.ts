@@ -65,14 +65,14 @@ api.get("/me", async (req, res, next) => {
   try {
     const {
       rows: [user],
-    } = await db.query("SELECT id,name,email,avatar FROM users WHERE id=$1", [
+    } = await db.query("SELECT id,name,email,avatar,google_id IS NOT NULL AS email_verified FROM users WHERE id=$1", [
       req.session.userId,
     ]);
     if (!req.session.csrf) req.session.csrf = randomUUID();
     res.json({
       user,
       csrfToken: req.session.csrf,
-      admin: env.ADMIN_EMAILS.split(",").includes(user.email),
+      admin: user.email_verified && env.ADMIN_EMAILS.split(",").includes(user.email),
     });
   } catch (e) {
     next(e);
@@ -391,10 +391,10 @@ app.use(
     try {
       const {
         rows: [user],
-      } = await db.query("SELECT email FROM users WHERE id=$1", [
+      } = await db.query("SELECT email,google_id FROM users WHERE id=$1", [
         req.session.userId,
       ]);
-      if (!env.ADMIN_EMAILS.split(",").includes(user?.email)) {
+      if (!user?.google_id || !env.ADMIN_EMAILS.split(",").includes(user?.email)) {
         res.status(403).json({ error: "Admin access required" });
         return;
       }

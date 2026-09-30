@@ -1,5 +1,7 @@
 import { Router, type RequestHandler } from "express";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, createHash } from "node:crypto";
+import { z } from "zod";
+import { hashPassword, verifyPassword } from "./password.js";
 import { db, redis } from "./infra.js";
 import { env } from "./config.js";
 import { encrypt } from "./crypto.js";
@@ -30,6 +32,62 @@ export const csrfRequired: RequestHandler = (req, res, next) => {
 };
 export const auth = Router();
 export class OAuthRequestError extends Error {}
+const emailAuthSchema = z.object({
+  mode: z.enum(["login", "register"]),
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  password: z.string().min(12, "Use at least 12 characters").max(128),
+  name: z.string().trim().min(1).max(100).optional(),
+});
+// Equal-cost comparison for unknown accounts; no account linking by unverified email.
+const dummyPasswordHash = await hashPassword(randomBytes(32).toString("hex"));
+auth.post("/auth/email", async (req, res, next) => {
+  try {
+    if (req.get("origin") !== new URL(env.APP_URL).origin || !req.is("application/json")) {
+      res.status(403).json({ error: "Start sign-in from this app." });
+      return;
+    }
+    const data = emailAuthSchema.parse(req.body);
+    const ip = createHash("sha256").update(req.ip || "unknown").digest("hex");
+    const attempts = await redis.eval(`local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],900) end; return n`, 1, `email-auth:${ip}`) as number;
+    if (attempts > 20) {
+      res.status(429).json({ error: "Too many sign-in attempts. Try again in 15 minutes." });
+      return;
+    }
+    let userId: string;
+    if (data.mode === "register") {
+      const passwordHash = await hashPassword(data.password);
+      const client = await db.connect();
+      try {
+        await client.query("BEGIN");
+        userId = randomUUID();
+        await client.query("INSERT INTO users(id,email,name) VALUES($1,$2,$3)", [userId, data.email, data.name || data.email.split("@")[0]]);
+        await client.query("INSERT INTO email_credentials(user_id,email,password_hash) VALUES($1,$2,$3)", [userId, data.email, passwordHash]);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        if ((error as { code?: string }).code === "23505") {
+          res.status(409).json({ error: "An email account already exists. Choose Log in." });
+          return;
+        }
+        throw error;
+      } finally { client.release(); }
+    } else {
+      const { rows: [account] } = await db.query("SELECT user_id,password_hash FROM email_credentials WHERE email=$1", [data.email]);
+      const valid = await verifyPassword(data.password, account?.password_hash || dummyPasswordHash);
+      if (!account || !valid) {
+        res.status(401).json({ error: "Email or password is incorrect." });
+        return;
+      }
+      userId = account.user_id;
+    }
+    req.session.regenerate((error) => {
+      if (error) return next(error);
+      req.session.userId = userId;
+      req.session.csrf = randomBytes(32).toString("hex");
+      req.session.save((error) => error ? next(error) : res.json({ status: "signed_in" }));
+    });
+  } catch (error) { next(error); }
+});
 const restartOAuth = () => new OAuthRequestError(
   "This login or connection attempt is missing, expired, or belongs to another browser session. Return to the app and start again using Login with Google or Connect Slack. Keep the same browser open and allow cookies.",
 );
