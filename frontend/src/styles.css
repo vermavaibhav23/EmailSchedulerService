@@ -601,6 +601,11 @@ kbd {
   font-size: 11px;
   color: #46554a;
 }
+.form-line > input[readonly] {
+  color: #2f4735;
+  font-weight: 600;
+  cursor: default;
+}
 .text-button,
 .upload {
   font-size: 10px;

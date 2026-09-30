@@ -17,7 +17,7 @@ import {
   search,
   index,
 } from "./infra.js";
-import { env } from "./config.js";
+import { env, googleOAuthConfigured } from "./config.js";
 import { auth, authRequired, csrfRequired, OAuthRequestError } from "./auth.js";
 import { encrypt } from "./crypto.js";
 import { scheduleSchema, plannedTimes } from "./validation.js";
@@ -48,6 +48,14 @@ app.use(
   }),
 );
 app.get("/health/live", (_req, res) => res.json({ status: "ok" }));
+app.get("/health/oauth", (_req, res) =>
+  res.json({
+    googleOAuthConfigured,
+    clientIdConfigured: Boolean(env.GOOGLE_CLIENT_ID),
+    clientSecretConfigured: Boolean(env.GOOGLE_CLIENT_SECRET),
+    redirectUri: `${env.APP_URL}/auth/google/callback`,
+  }),
+);
 app.get("/health/ready", async (_req, res) => {
   try {
     await Promise.all([db.query("SELECT 1"), redis.ping(), search.ping()]);
@@ -452,9 +460,15 @@ app.use(
       .json({ error: "The request could not be completed. Please try again." });
   },
 );
-const server = app.listen(env.PORT, "0.0.0.0", () =>
-  console.log(`API listening on ${env.PORT}`),
-);
+const server = app.listen(env.PORT, "0.0.0.0", () => {
+  console.log(`API listening on ${env.PORT}`);
+  console.log("Google OAuth configuration", {
+    configured: googleOAuthConfigured,
+    clientIdConfigured: Boolean(env.GOOGLE_CLIENT_ID),
+    clientSecretConfigured: Boolean(env.GOOGLE_CLIENT_SECRET),
+    redirectUri: `${env.APP_URL}/auth/google/callback`,
+  });
+});
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, () =>
     server.close(async () => {

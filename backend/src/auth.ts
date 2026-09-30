@@ -3,7 +3,7 @@ import { randomBytes, randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
 import { hashPassword, verifyPassword } from "./password.js";
 import { db, redis } from "./infra.js";
-import { env } from "./config.js";
+import { env, googleOAuthConfigured } from "./config.js";
 import { encrypt } from "./crypto.js";
 declare module "express-session" {
   interface SessionData {
@@ -122,10 +122,13 @@ async function consume(req: Parameters<RequestHandler>[0], provider: string) {
 }
 auth.get("/auth/google", async (req, res, next) => {
   try {
-    if (!env.GOOGLE_CLIENT_ID) {
+    if (!googleOAuthConfigured) {
       res
         .status(503)
-        .json({ error: "Google OAuth credentials are not configured" });
+        .json({
+          error:
+            "Google OAuth credentials are not available to this deployment. Check /health/oauth and redeploy the API service.",
+        });
       return;
     }
     const state = await oauthState(req, "google");
@@ -177,12 +180,46 @@ auth.get("/auth/google/callback", async (req, res, next) => {
     };
     if (!profileResponse.ok || !p.sub || !p.email_verified)
       throw new Error("Google account email must be verified");
-    const {
-      rows: [user],
-    } = await db.query(
-      `INSERT INTO users(id,google_id,email,name,avatar) VALUES($1,$2,$3,$4,$5) ON CONFLICT(google_id) DO UPDATE SET email=EXCLUDED.email,name=EXCLUDED.name,avatar=EXCLUDED.avatar RETURNING id`,
-      [randomUUID(), p.sub, p.email, p.name, p.picture],
-    );
+    const email = p.email.trim().toLowerCase();
+    const client = await db.connect();
+    let user: { id: string };
+    try {
+      await client.query("BEGIN");
+      const existing = await client.query<{ id: string; google_id: string | null }>(
+        "SELECT id,google_id FROM users WHERE google_id=$1 OR lower(email)=$2 FOR UPDATE",
+        [p.sub, email],
+      );
+      const conflict = existing.rows.find(
+        (candidate) => candidate.google_id && candidate.google_id !== p.sub,
+      );
+      if (conflict)
+        throw new OAuthRequestError(
+          "This email address is already linked to another Google account.",
+        );
+      if (existing.rows.length > 1)
+        throw new OAuthRequestError(
+          "The Google account and email address belong to different users.",
+        );
+      if (existing.rows[0]) {
+        const result = await client.query<{ id: string }>(
+          "UPDATE users SET google_id=$2,email=$3,name=$4,avatar=$5 WHERE id=$1 RETURNING id",
+          [existing.rows[0].id, p.sub, email, p.name, p.picture],
+        );
+        user = result.rows[0];
+      } else {
+        const result = await client.query<{ id: string }>(
+          "INSERT INTO users(id,google_id,email,name,avatar) VALUES($1,$2,$3,$4,$5) RETURNING id",
+          [randomUUID(), p.sub, email, p.name, p.picture],
+        );
+        user = result.rows[0];
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
     req.session.regenerate((err) => {
       if (err) {
         next(err);

@@ -293,12 +293,18 @@ function App() {
                 Connect Slack
               </a>
             )}
-            <img
-              className="avatar"
-              src={user.avatar}
-              referrerPolicy="no-referrer"
-              alt={user.name}
-            />
+            {user.avatar ? (
+              <img
+                className="avatar"
+                src={user.avatar}
+                referrerPolicy="no-referrer"
+                alt={user.name}
+              />
+            ) : (
+              <span className="avatar avatar-fallback" aria-label={user.name}>
+                {user.name.slice(0, 2).toUpperCase()}
+              </span>
+            )}
           </div>
         </header>
         <main className="content">
@@ -422,6 +428,7 @@ function App() {
       </div>
       {compose && (
         <Compose
+          user={user}
           senders={senders}
           settings={settings}
           creating={creating}
@@ -476,6 +483,7 @@ function App() {
   );
 }
 function Compose({
+  user,
   senders,
   settings,
   creating,
@@ -483,6 +491,7 @@ function Compose({
   close,
   done,
 }: {
+  user: User;
   senders: Sender[];
   settings: Settings;
   creating: boolean;
@@ -583,7 +592,16 @@ function Compose({
         </div>
         <div className="compose-body">
           <div className="form-line">
-            <label htmlFor="sender">From</label>
+            <label htmlFor="from">From</label>
+            <input
+              id="from"
+              value={`${user.name} <${user.email}>`}
+              readOnly
+              aria-readonly="true"
+            />
+          </div>
+          <div className="form-line">
+            <label htmlFor="sender">Delivery</label>
             <select
               id="sender"
               value={senderId}

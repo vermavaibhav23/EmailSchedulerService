@@ -41,7 +41,7 @@ const worker = new Worker(
     const {
       rows: [mail],
     } = await db.query(
-      `SELECT e.*,s.smtp_secret,s.email AS sender_email,s.hourly_limit AS sender_limit,c.delay_ms,c.hourly_limit AS campaign_limit FROM emails e JOIN senders s ON s.id=e.sender_id JOIN campaigns c ON c.id=e.campaign_id WHERE e.id=$1`,
+      `SELECT e.*,s.smtp_secret,s.email AS sender_email,s.hourly_limit AS sender_limit,c.delay_ms,c.hourly_limit AS campaign_limit,u.email AS owner_email,u.name AS owner_name FROM emails e JOIN senders s ON s.id=e.sender_id JOIN campaigns c ON c.id=e.campaign_id JOIN users u ON u.id=e.user_id WHERE e.id=$1`,
       [job.data.emailId],
     );
     if (!mail || mail.status !== "scheduled") return;
@@ -86,7 +86,8 @@ const worker = new Worker(
     try {
       const messageId = `<${mail.id}@scheduler.local>`;
       const result = await transport.sendMail({
-        from: mail.sender_email,
+        from: { name: mail.owner_name, address: mail.owner_email },
+        envelope: { from: mail.sender_email, to: mail.recipient },
         to: mail.recipient,
         subject: mail.subject,
         text: mail.body,

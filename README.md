@@ -12,7 +12,7 @@ Choose **Create an account** on your first visit, then use your email and passwo
 - [Dependency health](https://api-production-d882.up.railway.app/health/ready) checks PostgreSQL, Redis, Elasticsearch, and the worker heartbeat.
 - [Railway project](https://railway.com/project/6e662898-d5d2-402e-acf2-d44c7e927953) shows the deployment; access requires permission to the Railway workspace.
 
-The app, direct login, and dependency connections have been verified. **End-to-end SMTP sending is currently blocked by Railway Hobby's outbound SMTP restriction.** Railway requires Pro or above for SMTP; after upgrading, redeploy the worker. See [Railway's email delivery rules](https://docs.railway.com/networking/outbound-networking). Google login and Slack notifications need their OAuth app credentials before they can be demonstrated. A green health check confirms infrastructure connectivity, not SMTP or OAuth functionality.
+The app, direct login, and dependency connections have been verified. **End-to-end SMTP sending is currently blocked by Railway Hobby's outbound SMTP restriction.** Railway requires Pro or above for SMTP; after upgrading, redeploy the worker. See [Railway's email delivery rules](https://docs.railway.com/networking/outbound-networking). Google login and Slack notifications require their OAuth app credentials in the API service. A green readiness check confirms infrastructure connectivity; use `/health/oauth` to check the Google OAuth configuration separately.
 
 ## Architecture on Railway
 
@@ -117,6 +117,14 @@ https://api-production-d882.up.railway.app/auth/google/callback
 
 Start from **Login with Google** in the app. Opening the callback URL directly does not start a login. For your own deployment, replace the domain with your `APP_URL`.
 
+After deploying, open `/health/oauth`. Both `clientIdConfigured` and
+`clientSecretConfigured` must be `true`, and `redirectUri` must exactly match the
+authorized redirect URI in Google Cloud. This endpoint reports only whether the
+variables exist; it never returns either secret.
+
+Compose shows the authenticated user's name and email in **From**. The selected
+Ethereal account remains the SMTP delivery account and envelope sender.
+
 ### Slack notifications
 
 Create a Slack app with the `incoming-webhook` OAuth scope. Set its client ID and secret on the API and register:
@@ -155,7 +163,7 @@ When the cap is reached, remaining jobs move to the next UTC hour. They are not 
 | Backend: concurrency | Configurable worker concurrency and database claims shared across worker instances. |
 | Backend: search and visibility | Elasticsearch indexing and user-scoped search; read-only Bull Board at `/admin/queues` for verified, allowlisted admins. |
 | Backend: Slack | Real OAuth connection, encrypted webhook, limit notifications, disconnect/reconnect. Credentials and live verification remain pending. |
-| Frontend: login | Direct email registration/login, logout, name/email, avatar or initials. Google OAuth flow is implemented but configuration is deferred. |
+| Frontend: login | Direct email registration/login, logout, name/email, avatar or initials, and Google OAuth with verified-email account linking. |
 | Frontend: dashboard | Scheduled and Sent views, search, pagination, details, five-second refresh, loading/error/empty states. |
 | Frontend: compose | Subject/body, CSV/text parsing and address count, duplicate removal, sender selection, start time, delay, hourly cap. |
 
