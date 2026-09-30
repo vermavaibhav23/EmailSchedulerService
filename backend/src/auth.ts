@@ -29,6 +29,10 @@ export const csrfRequired: RequestHandler = (req, res, next) => {
   next();
 };
 export const auth = Router();
+export class OAuthRequestError extends Error {}
+const restartOAuth = () => new OAuthRequestError(
+  "This login or connection attempt is missing, expired, or belongs to another browser session. Return to the app and start again using Login with Google or Connect Slack. Keep the same browser open and allow cookies.",
+);
 async function oauthState(
   req: Parameters<RequestHandler>[0],
   provider: string,
@@ -45,17 +49,17 @@ async function oauthState(
 }
 async function consume(req: Parameters<RequestHandler>[0], provider: string) {
   const state = String(req.query.state || "");
-  if (!state || req.session.oauthState !== state)
-    throw new Error("Invalid OAuth state");
+  if (typeof req.query.state !== "string" || !state || req.session.oauthState !== state)
+    throw restartOAuth();
   const raw = await redis.getdel(`oauth:${state}`);
   delete req.session.oauthState;
-  if (!raw) throw new Error("Expired OAuth state");
+  if (!raw) throw restartOAuth();
   const data = JSON.parse(raw);
   if (
     data.provider !== provider ||
     data.userId !== (req.session.userId || null)
   )
-    throw new Error("OAuth session mismatch");
+    throw restartOAuth();
   return data;
 }
 auth.get("/auth/google", async (req, res, next) => {
@@ -83,6 +87,8 @@ auth.get("/auth/google", async (req, res, next) => {
 auth.get("/auth/google/callback", async (req, res, next) => {
   try {
     await consume(req, "google");
+    if (req.query.error || typeof req.query.code !== "string" || !req.query.code)
+      throw new OAuthRequestError("Google sign-in was not completed. Return to the app and choose Login with Google again.");
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       body: new URLSearchParams({
@@ -165,6 +171,8 @@ auth.get(
   async (req, res, next) => {
     try {
       await consume(req, "slack");
+      if (req.query.error || typeof req.query.code !== "string" || !req.query.code)
+        throw new OAuthRequestError("Slack authorization was not completed. Return to the app and choose Connect Slack again.");
       const response = await fetch("https://slack.com/api/oauth.v2.access", {
         method: "POST",
         body: new URLSearchParams({

@@ -18,7 +18,7 @@ import {
   index,
 } from "./infra.js";
 import { env } from "./config.js";
-import { auth, authRequired, csrfRequired } from "./auth.js";
+import { auth, authRequired, csrfRequired, OAuthRequestError } from "./auth.js";
 import { encrypt } from "./crypto.js";
 import { scheduleSchema, plannedTimes } from "./validation.js";
 const app = express();
@@ -431,6 +431,10 @@ app.use(
     res: express.Response,
     _next: express.NextFunction,
   ) => {
+    if (error instanceof OAuthRequestError) {
+      res.status(400).json({ error: error.message, restartUrl: "/" });
+      return;
+    }
     if (error instanceof z.ZodError) {
       res.status(400).json({
         error: error.issues
