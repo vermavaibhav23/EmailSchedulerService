@@ -89,3 +89,7 @@ See [docs/VERIFICATION.md](docs/VERIFICATION.md) for the real-service restart, r
 For a demo under 5 minutes: log in; connect Slack; create two senders; schedule three emails with a sender hourly cap of 2; show Scheduled and Sent with Ethereal previews; show the Slack limit message and delayed third job; stop/restart the worker before a future scheduled email; show its eventual send and unchanged completed rows in Bull Board.
 
 Submission sharing and the submission form are separate user actions; no collaborator access or application submission is performed automatically.
+
+## Direct email login
+
+The login page supports email/password login and account creation alongside Google. Choose **Create an account** on first use; passwords require 12–128 characters and are stored as salted scrypt hashes. Auth uses the same Redis session/CSRF flow, rotates the session on sign-in and limits attempts to 20 per IP per 15 minutes. `/auth/email` requires same-origin JSON POSTs. Password identities are separate from Google identities and are never automatically linked by email. Email ownership is not verified in this basic flow, so password accounts cannot obtain admin access through ADMIN_EMAILS. Email verification, password recovery and account linking are future extensions.
