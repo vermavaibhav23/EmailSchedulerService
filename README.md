@@ -1,6 +1,6 @@
 # Email Scheduler Service
 
-A small email scheduling app built with Express and TypeScript, React, PostgreSQL, Redis, BullMQ, and Elasticsearch. It follows the [ReachInbox assignment](https://sumptuous-word-80f.notion.site/Software-Development-Intern-Assignment-2bc1596f45e88080995cec1180a2bc60) and the supplied [Figma design](https://www.figma.com/design/kOTwGlESjijCYnMgtHfvfU/Outbox-Labs-Assignment?node-id=59-4050).
+A full-stack email scheduling platform that allows users to connect their accounts, upload recipient lists, create email campaigns, schedule messages, and reliably send emails at scale. It uses Express and TypeScript with React, PostgreSQL, Redis, BullMQ, and Elasticsearch to handle campaign management, background job processing, delayed scheduling, email history, and fast search capabilities.
 
 ## Demo and current status
 
