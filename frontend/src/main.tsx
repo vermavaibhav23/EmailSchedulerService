@@ -25,6 +25,51 @@ type Settings = {
   maxHourlyLimit: number;
   maxRecipients: number;
 };
+function Login({ initialError }: { initialError: string }) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(initialError);
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/auth/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mode, email, password, ...(mode === "register" ? { name } : {}) }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({ error: "Sign-in failed. Please try again." }));
+        throw new Error(result.error);
+      }
+      window.location.assign("/");
+    } catch (e) { setError((e as Error).message); setBusy(false); }
+  }
+  return <main className="login">
+    <div className="login-brand">ONB<span>OUTBOX LABS</span></div>
+    <section className="login-card" aria-labelledby="login-title">
+      <div className="login-icon"><Mail size={25} /></div>
+      <h1 id="login-title">{mode === "login" ? "Login" : "Create an account"}</h1>
+      <p>{mode === "login" ? "Welcome back to your email workspace" : "Your email workspace starts here"}</p>
+      <a className="google" href="/auth/google"><strong className="google-g">G</strong> Login with Google</a>
+      <div className="divider"><span>or continue with email</span></div>
+      <form className="email-login" onSubmit={submit}>
+        {mode === "register" && <label htmlFor="login-name">Full name<input id="login-name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required maxLength={100} disabled={busy} placeholder="Your name" /></label>}
+        <label htmlFor="login-email">Email address<input id="login-email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} disabled={busy} placeholder="you@example.com" /></label>
+        <label htmlFor="login-password">Password<input id="login-password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} required minLength={12} maxLength={128} disabled={busy} placeholder="Enter your password" aria-describedby={mode === "register" ? "password-hint" : undefined} /></label>
+        {mode === "register" && <span id="password-hint" className="password-hint">Use at least 12 characters.</span>}
+        {error && <div className="error" role="alert">{error}</div>}
+        <button className="email-submit" type="submit" disabled={busy}>{busy ? "Please wait…" : mode === "login" ? "Log in with email" : "Create account"}<ArrowRight size={15} /></button>
+      </form>
+      <p className="account-switch">{mode === "login" ? "New here?" : "Already have an account?"} <button type="button" disabled={busy} onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setPassword(""); }}>{mode === "login" ? "Create an account" : "Log in"}</button></p>
+    </section>
+    <footer>Email scheduling, made simple.</footer>
+  </main>;
+}
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [boot, setBoot] = useState(true),
@@ -147,29 +192,7 @@ function App() {
       </div>
     );
   if (!user)
-    return (
-      <main className="login">
-        <div className="login-brand">
-          ONB<span>OUTBOX LABS</span>
-        </div>
-        <section className="login-card">
-          <div className="login-icon">
-            <Mail size={25} />
-          </div>
-          <h1>Login</h1>
-          <p>Welcome back to your email workspace</p>
-          <a className="google" href="/auth/google">
-            <strong className="google-g">G</strong> Login with Google
-          </a>
-          <div className="divider">
-            <span>Secure sign in</span>
-          </div>
-          <p className="small">Schedule thoughtfully. Send reliably.</p>
-          {authError && <div className="error">{authError}</div>}
-        </section>
-        <footer>Email scheduling, made simple.</footer>
-      </main>
-    );
+    return <Login initialError={authError} />;
   return (
     <div className="workspace">
       <aside>
@@ -177,7 +200,7 @@ function App() {
           ONB<span>OUTBOX LABS</span>
         </a>
         <div className="profile">
-          <img src={user.avatar} referrerPolicy="no-referrer" alt="" />
+          {user.avatar ? <img src={user.avatar} referrerPolicy="no-referrer" alt="" /> : <span className="avatar-fallback">{user.name.slice(0, 2).toUpperCase()}</span>}
           <div>
             <strong>{user.name}</strong>
             <span title={user.email}>{user.email}</span>
