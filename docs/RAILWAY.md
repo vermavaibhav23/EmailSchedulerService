@@ -43,11 +43,8 @@ Generate a public domain only for the API. The worker and infrastructure remain 
 
 ## 3. Verify integrations before UI acceptance
 
-Check each service's deployment status and logs. `/health/live` returns 200 as soon as the API serves; `/health/ready` must return 200 after DB, Redis, Elasticsearch and worker connect. Sign in using Google, provision an Ethereal sender, connect Slack, and schedule a small batch. Use the live verification checklist. Confirm persistent volumes and backups before restart testing.
+Check each service's deployment status and logs. `/health/live` returns 200 as soon as the API serves; `/health/ready` must return 200 after DB, Redis, Elasticsearch and worker connect. Sign in using direct email login, or Google once configured. Provision an Ethereal sender, connect Slack once configured, and schedule a small batch. Use the live verification checklist. Confirm persistent volumes and backups before restart testing.
 
-## Current handoff
-
-These are checked-in deployment configuration and instructions, not evidence that a Railway project exists. Live creation/deployment requires an authenticated Railway session and repository access. OAuth testing requires the user's real app credentials. No credentials belong in Git.
 
 ## Current deployment
 
@@ -56,3 +53,7 @@ Project: https://railway.com/project/6e662898-d5d2-402e-acf2-d44c7e927953
 App: https://api-production-d882.up.railway.app
 
 Verified on 2026-09-30 UTC: login page loads, `/health/live` returns 200, `/health/ready` returns 200 (PostgreSQL, Redis, Elasticsearch and worker heartbeat), and unauthenticated `/api/me` returns 401. All infrastructure and BullMQ workers run on Railway. Google and Slack OAuth credentials still need configuring; authenticated delivery, restart recovery, rate-limit and Slack tests in VERIFICATION.md have not yet been executed against this deployment.
+
+## SMTP and direct-login status
+
+Direct email account creation, login, logout and request protection have been verified on the deployed API. Google OAuth remains deferred; Slack needs real app credentials. Railway Hobby blocks outbound SMTP: [SMTP requires Pro or above](https://docs.railway.com/networking/outbound-networking), followed by worker redeployment. Ethereal captures test messages and never delivers them to real recipient inboxes. Successful SMTP delivery and the full restart/Slack demo remain unverified. See the root README for the current feature map and reproduction steps.
