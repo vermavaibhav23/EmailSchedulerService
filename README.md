@@ -4,6 +4,8 @@ A small email scheduling app built with Express and TypeScript, React, PostgreSQ
 
 ## Demo and current status
 
+**[Watch Demo Video on YouTube]** (https://www.youtube.com/watch?v=wlzkAIqf-gg)
+
 **Open the app:** https://api-production-d882.up.railway.app/
 
 Choose **Create an account** on your first visit, then use your email and password to log in. Passwords must contain at least 12 characters. No Google setup is needed for direct login.
